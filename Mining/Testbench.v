@@ -17,15 +17,14 @@ module FSM_testbench;
     wire fine_scrittura;
     wire fine_lettura;
     
-    
+    //Registri e segnali per la memoria
     wire [7:0] out_mem;
-    wire we;
-    wire re;
-    reg [8:0] indirizzo_write = 9'h0;
+    wire we;    
+    reg [8:0] indirizzo_write = 9'h0; // [1:0] indirizzo = 2'b00
     wire [8:0] indirizzo_read;
     
     //Registri per l'adder
-    reg [MESS_WIDTH-1:0] msg;
+    reg [MESS_WIDTH-1:0] msg;  //32 -> 4095
     reg [7:0] dati;
     wire [12:0] out;
     wire fine;
@@ -52,8 +51,7 @@ module FSM_testbench;
         .start(start),
         .clk(clk),
         .reset(reset),
-        .we(we),
-        .re(re),          
+        .we(we),                  
         .fine_scrittura(fine_scrittura),
         .fine_lettura(fine_lettura),
         .fine(fine),
@@ -64,8 +62,7 @@ module FSM_testbench;
     Memoria m1(
         .clk(clk),
         .reset(reset),
-        .we(we),
-        .re(re),
+        .we(we),       
         .indirizzo_write(indirizzo_write),
         .indirizzo_read(indirizzo_read),
         .dati(dati),
@@ -76,13 +73,10 @@ module FSM_testbench;
         );
     
     Adder add1(
-        .in(out_mem),
-         
+        .in(out_mem),        
         .clk(clk), 
-        .reset(reset), 
-                
-        .state(state),                
-        
+        .reset(reset),                
+        .state(state),                      
         .fine(fine), 
         .out(out)
         );
