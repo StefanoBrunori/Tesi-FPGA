@@ -35,7 +35,7 @@ module Adder(
         else begin        
             case(state)
                 
-                //Sommo gli 8 bit presi in input
+                //In questo stato l'adder non esegue operazioni
                 2'b00 : begin 
                 end
                 
