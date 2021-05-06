@@ -3,8 +3,7 @@
 module Memoria(
     input clk,
     input reset,
-    input we,
-    input re,
+    input we,    
     input wire [8:0] indirizzo_write,
     input wire [8:0] indirizzo_read,
     input wire [7:0] dati, 
@@ -15,21 +14,22 @@ module Memoria(
     );
     
     //La lunghezzza media di un blocco della blockchain è di ~1MB = 8388608 bit
-    //Per questa struttura iniziale useremo un messaggio di 4096 bit
     parameter DATA_WIDTH = 8;
     parameter DATA_DEPTH = 512;
     //La mia memoria consisterà in 4 blocchi da 8 bit ciascuno
     reg [DATA_WIDTH-1:0] ram [0:DATA_DEPTH-1];       
     
-              
-    //Quando read_write = 0 viene eseguita una scrittura in memoria
-    //Quando read_write = 1 viene eseguita una lettura in memoria    
-    always@(posedge clk) begin        
+                 
+    always@(posedge clk) begin
+        
+        //Reset dei segnali di controllo e dei registri di appoggio        
         if (reset) begin
             fine_lettura <= 0;
             fine_scrittura <= 0;
             out_mem <= 8'h0;            
         end
+        
+        //Quando we (write enable) = 1 viene eseguita una lettura in memoria
         if (we) begin                                               
             ram[indirizzo_write] <= dati;            
         end    
@@ -37,12 +37,12 @@ module Memoria(
         if (indirizzo_write == DATA_DEPTH-1 && we)
             fine_scrittura <= 1;
                     
-        if (indirizzo_read == DATA_DEPTH-1 && re)
+        if (indirizzo_read == DATA_DEPTH-1 && ~we)
                 fine_lettura <= 1;
-                       
-        if (re) begin                 
-            out_mem <= ram[indirizzo_read];                               
-        end                                                                                                   
+        
+        //In output viene costantemente mandato il contenuto della memoria all'indirizzo "indirizzo_read"                                        
+        out_mem <= ram[indirizzo_read];                               
+                                                                                                           
     end
               
 endmodule
