@@ -1,7 +1,5 @@
 `timescale 1ns / 1ps
 
-//SHA-256 output for "": e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-
 module Adder(
     input wire [7:0] in,
     
@@ -13,7 +11,7 @@ module Adder(
     output reg fine,
     output reg [12:0] out
     );
-       
+    
     
     //Inizio della Funzione: "Somma dei bit del messaggio"
     
