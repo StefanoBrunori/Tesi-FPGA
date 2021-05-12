@@ -14,7 +14,7 @@ module FSM(
     input fine, 
     
     output reg [8:0] indirizzo_read,
-    output reg [8:0] state
+    output reg [1:0] state
     );
     
                    
