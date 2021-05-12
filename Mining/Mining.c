@@ -3,7 +3,6 @@
 #include "mining_ip.h"
 #include <stdlib.h>
 
-
 int main(){
   
   //Definisco l'indirizzo base della IP Custom e la lunghezza complessiva del messaggio in bit
@@ -28,6 +27,7 @@ int main(){
 	MINING_IP_mWriteReg(BASE_ADDR, 4, 0);
 
   //Sto in ascolto finchè non esce in output il valore che mi interessa: finchè il registro di output ha valore 0 rimango in attesa
+  //NOTA: Quando il programma viene eseguito sulla FPGA ritorna un valore "out" errato: per aggiustarlo è necessario sottrarre a quest'ultimo n=out/512 arrotondato per difetto.
 	u32 out;
 	while (1){
 		out = MINING_IP_mReadReg(BASE_ADDR, 12)-(MINING_IP_mReadReg(BASE_ADDR, 12)/512);
