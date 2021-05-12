@@ -7,3 +7,5 @@ Per prima cosa viene generato un messaggio di 4096 bit nel Testbench; a quel pun
                 8 bit presi in input in quel fronte di clock.
   - stato 11 := In questo stato la macchina mette re a 0 e manda in output la somma totale eseguita su tutto il messaggio, ritornando così il numero di bit pari a 1 nel messaggio 
                 iniziale. 
+
+NOTA: Quando il programma viene eseguito sulla FPGA ritorna un valore "out" errato: per aggiustarlo è necessario sottrarre a quest'ultimo n=out/512 arrotondato per difetto.
