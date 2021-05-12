@@ -13,7 +13,6 @@ module Memoria(
     output reg [7:0] out_mem
     );
     
-    //La lunghezzza media di un blocco della blockchain è di ~1MB = 8388608 bit
     parameter DATA_WIDTH = 8;
     parameter DATA_DEPTH = 512;
     //La mia memoria consisterà in 4 blocchi da 8 bit ciascuno
@@ -41,7 +40,9 @@ module Memoria(
                 fine_lettura <= 1;
         
         //In output viene costantemente mandato il contenuto della memoria all'indirizzo "indirizzo_read"                                        
-        out_mem <= ram[indirizzo_read];                               
+        if (state == 2'b10) begin
+            out_mem <= ram[indirizzo_read];                               
+        end
                                                                                                            
     end
               
