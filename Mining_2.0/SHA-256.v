@@ -1,60 +1,108 @@
-`timescale 1ns / 1ps
+ `timescale 1ns / 1ps
 
 module Preprocessing(
     input clock,
     input reset,
+    input reset_fsm,
     input [6:0] indirizzo,
     input [2:0] state,   
     input wire [31:0] message,
-    input wire [14:0] mess_lenght,
+    input wire [63:0] mess_lenght,
+    input wire [31:0] NONCE,
+    input wire nonce_flag,
+    
+      
     output reg [511:0] chunk,
     output reg fine    
     );
     
     parameter WIDTH = 512;
-    parameter DEPTH = 100;
+    parameter DEPTH = 2000;
     
-    //Mi costruisco una memoria 100 blocchi da 512 bit ciascuno
+    //Mi costruisco una memoria 2000 blocchi da 512 bit ciascuno
     reg [WIDTH-1:0] memoria [0:DEPTH-1];  
     
     //Diachiarazione registri e variabili d'appoggio   
     integer i, j, k, resto, ind;
     reg [15:0] new_lenght;
-    reg [63:0] lenght_little_endian;
-    reg [63:0] lenght_big_endian;
     integer indirizzo_width;
     reg [11:0] index;
+    
         
     always@(posedge clock) begin
+        
+        //Reset
+        if (reset || reset_fsm) begin
+            new_lenght <= 16'h0;
+            indirizzo_width <= 1'b1;
+            index <= 12'h0;
+            fine <= 1'b0;
+            chunk <= 512'h0;
+        end
+        
         //Inizializzazione del segnale di controllo           
         if (^fine === 1'bx) fine <= 1'b0;        
-        
+                   
         case (state)
                    
-            3'b000: begin
+            3'b000: begin              
                 //----------------------STATO 000-----------------------------//
                 //--------------------Stato iniziale--------------------------//
                 end                              
             
             
-            3'b001: begin
+            3'b001: begin               
                 //----------------------STATO 001-----------------------------//
                 //-----------------SCRITTURA IN MEMORIA-----------------------//
                 
                 //Scrivo il messaggio in memoria       
                 memoria[indirizzo] = message;
-                $display("\nmemoria[%d]: %h", indirizzo, message);              
+                              
             end
         
-            3'b010: begin       
+            3'b010: begin                      
                 //----------------------STATO 010-----------------------------//        
-                //------------------CALCOLO DELL'INDIRIZZO--------------------//
+                //--------IMBOTTITURA E SALVATAGGIO NONCE IN MEMORIA----------//
+                
+                for (i=0;i<512;i=i+1) begin
+                    if (^memoria[indirizzo][i] === 1'bx) begin
+                        memoria[indirizzo][i] <= 1'b0;
+                    end 
+                end
+                
+                //Salvataggio nel nonce in memoria (concatenato al messaggio originale)
+                //Se lo spazio nell'ultimo blocco di memoria è minore di 32 bit... 
+                //...allora il nonce sarà salvato in due blocchi differenti                                              
+                if (512-(mess_lenght%512)<32) begin
+                   for (i=0;i<512-(mess_lenght%512);i=i+1) begin
+                       if (nonce_flag) begin
+                           memoria[indirizzo][512-(mess_lenght%512)+i] <= NONCE[31-i]; 
+                       end
+                       else begin
+                           memoria[indirizzo] <= {memoria[indirizzo], NONCE[31-i]};
+                       end 
+                   end
+                   for (i=512-(mess_lenght%512);i<32;i=i+1) begin
+                       memoria[indirizzo+1] <= NONCE[31-i];  
+                   end 
+                end
+                //Altrimenti verrà salvato nel blocco corrente
+                if (512-(mess_lenght%512)>=32) begin
+                    if (nonce_flag) begin
+                        memoria[indirizzo][0+:32] <= NONCE;  
+                    end
+                    else begin
+                        memoria[indirizzo] <= {memoria[indirizzo], NONCE};
+                    end
+                end                                                                               
+                new_lenght = mess_lenght + 32;
+                
                 
                 //Calcolo l'indirizzo esatto in cui salvare il bit "1"
-                indirizzo_width = mess_lenght%WIDTH;
+                indirizzo_width = new_lenght%WIDTH;
                 
                 //Lunghezza del messaggio dopo aver aggiunto il bit "1"
-                new_lenght = mess_lenght + 1;
+                new_lenght = new_lenght + 1;
                 
                 //Appendo al messaggio il bit "1" e lo "imbottisco" con gli zeri (caso 1) 
                 if (indirizzo_width == 0) begin
@@ -73,7 +121,7 @@ module Preprocessing(
                         new_lenght = new_lenght + new_lenght%512 + 448;
                         ind = indirizzo + 1;
                     end
-                    else begin
+                    else begin //(if new_lenght%512 < 448)
                         for (i=0;i<448-new_lenght%512;i=i+1) begin
                             memoria[indirizzo] = {memoria[indirizzo], 1'b0};     
                         end
@@ -84,27 +132,24 @@ module Preprocessing(
                                                                           
                                                                    
                 //Appendo la lunghezza del messaggio originale al messaggio "imbottito"
-                //come intero da 64-bit big-endian
-                lenght_little_endian = mess_lenght;
-                for (i=63;i>=0;i=i-1) begin
-                    lenght_big_endian[i] = lenght_little_endian[63-i];
-                end
-                memoria[ind] = {memoria[ind], lenght_big_endian};          
+                //come intero da 64-bit big-endian               
+                memoria[ind] = {memoria[ind], mess_lenght+32};          
                 new_lenght = new_lenght+64;              
                 index = 0;
             end
             
-            3'b011: begin
+            3'b011: begin               
                 //----------------------------------STATO 011------------------------------------------//
                 //------DIVIDO IL MESSAGGIO IN BLOCCHI DA 512-bit E LI PASSO ALLA FUNZIONE "Chunks"----//
                 
-                //Sposto il messaggio nel modulo Chunks a blocchi di 512-bit                                                                         
-                if (index > ind) begin
-                    fine = 1; 
-                end
-                else begin                                                         
+                //Sposto il messaggio nel modulo Chunks a blocchi di 512-bit                                                                                         
+                if (~fine) begin
                     chunk <= memoria[index];
-                    index = index + 1;                   
+                    //$display();
+                    index = index + 1;
+                end
+                if (index > ind) begin
+                    fine = 1;                                    
                 end
             end
             
@@ -119,8 +164,7 @@ module Preprocessing(
             3'b110: begin
             end
             
-            3'b111: begin
-            end
+            3'b111: fine <= 1'b0;           
                    
         endcase
         
@@ -133,10 +177,11 @@ endmodule
 module Chunks(
     input clock,
     input reset,
+    input reset_fsm,
     input [2:0] state,
     input [511:0] chunk,
-           
-    output reg [255:0] HASH 
+               
+    output reg fine_mining 
     );
     
     
@@ -168,7 +213,9 @@ module Chunks(
     reg [31:0] h4;
     reg [31:0] h5;
     reg [31:0] h6;
-    reg [31:0] h7;    
+    reg [31:0] h7;
+    
+    reg [255:0] HASH;    
       
     parameter k = {
     32'h428a2f98, 32'h71374491, 32'hb5c0fbcf, 32'he9b5dba5, 32'h3956c25b, 32'h59f111f1, 32'h923f82a4, 32'hab1c5ed5, 
@@ -183,7 +230,7 @@ module Chunks(
     
     always@(posedge clock) begin
         //reset
-        if (reset) begin
+        if (reset || reset_fsm) begin
             s0 <= 32'h0;
             s1 <= 32'h0;
         
@@ -199,15 +246,24 @@ module Chunks(
             maj <= 32'h0;
             t2 <= 32'h0;
             ch <= 32'h0;
-            t1 <= 32'h0;    
+            t1 <= 32'h0;
+            
+            HASH <= 256'h0;    
         end
         
         if (^HASH === 1'bx) HASH = 256'h0;
+        if (^fine_mining === 1'bx) fine_mining <= 1'b0;
         
         case (state)
             
-            3'b000: begin
+            3'b000: begin               
                 //------------------------STATO 000------------------------//
+                //------Stato in cui la funzione non esegue operazioni-----//                                            
+            end
+            
+            //Stati in cui la funzione non esegue operazioni
+            3'b001: begin
+                //------------------------STATO 001------------------------//
                 //--------------Inizializzazione valori iniziali-----------//
                 
                 h0 <= 32'h6a09e667;
@@ -217,32 +273,24 @@ module Chunks(
                 h4 <= 32'h510e527f;
                 h5 <= 32'h9b05688c;
                 h6 <= 32'h1f83d9ab;
-                h7 <= 32'h5be0cd19;
-                
+                h7 <= 32'h5be0cd19;             
             end
             
-            //Stati in cui la funzione non esegue operazioni
-            3'b001: begin
-            end
-                    
+            //Stati in cui la funzione non esegue operazioni        
             3'b010: begin
             end
                  
             3'b011: begin
             end
             
-            3'b100: begin
+            3'b100: begin              
                 //------------------------STATO 100------------------------//
                 //----------------Preparazione delle 16 parole-------------//
                 
                 //Divido il chunk in sedici parole da 32-bit con notazione big-endian (quindi: little_endian=[110100] => big_endian=[001011])
-                for (i=0; i<16; i=i+1) begin
-                    word = chunk[i*32 +: 32];
-                    
-                    //Trasformo la word da little-endian a big-endian
-                    for (j=0;j<=31;j=j+1) begin
-                        w[i][j] = word[31-j];
-                    end                                   
+                
+                for (i=16; i>0; i=i-1) begin
+                    w[16-i] = chunk[((i*32)-1) -: 32];                                                                                         
                 end
                 
                 //Estendo le sedici parole da 32-bit in sessantaquattro parole da 32-bit            
@@ -261,10 +309,10 @@ module Chunks(
                 f = h5;
                 g = h6;
                 h = h7;  
-                                                       
+                                                        
             end
             
-            3'b101: begin          
+            3'b101: begin                                      
                 //------------------------STATO 101------------------------//
                 //---------------------Ciclo principale--------------------// 
                                                                                                                    
@@ -288,7 +336,7 @@ module Chunks(
                 end
             end
             
-            3'b110: begin              
+            3'b110: begin                            
                 //------------------------STATO 110------------------------//
                 //-------------------Aggiornamento valori------------------//    
                        
@@ -302,17 +350,18 @@ module Chunks(
                 h7 = h7 + h;
             end
             
-            3'b111: begin
+            3'b111: begin              
                 //------------------------STATO 111------------------------//
                 //-------------------Produco l'hash finale-----------------//
-            
-                HASH = {h0, h1, h2, h3, h4, h5, h6, h7};              
+                
+                HASH = {h0, h1, h2, h3, h4, h5, h6, h7};
+                if (HASH[255:246] == 10'b0000000000) begin                  
+                    fine_mining <= 1'b1;   
+                end                                            
                 $monitor("\nHash finale: %h\n", HASH);
             end
             
         endcase
     end
-    
-    
-    
-endmodule 
+
+endmodule
