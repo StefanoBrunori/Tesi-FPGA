@@ -17,6 +17,7 @@ module Mining_test;
     wire [2:0] state;       
     wire [511:0] chunk;                           
     wire [63:0] OUT;
+    wire [255:0] HASH;
              
     reg [1023:0] messaggio;
     
