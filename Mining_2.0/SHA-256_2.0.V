@@ -22,7 +22,7 @@ module Preprocessing(
     
     //Diachiarazione registri e variabili d'appoggio         
     reg [11:0] index;
-    
+    reg [31:0] nonce_attuale;
         
     always@(posedge clock) begin
         
@@ -49,21 +49,24 @@ module Preprocessing(
                 
                 //Scrivo il messaggio in memoria
                 if (~stopw) begin       
-                    memoria[indirizzo] = {memoria[indirizzo], message};                               
+                    memoria[indirizzo] = message;                               
                 end                              
             end                      
             
             3'h2: begin               
-                //-------------------------STATO 010--------------------------------//
-                //----------------------AGGIORNO IL NONCE---------------------------//
+                //--------------------STATO 010--------------------------------//
+                //---------INIZIO L'AGGIORNAMENTO DEL NONCE--------------------//
                                
-                memoria[indirizzo_nonce][width-:32] <= memoria[indirizzo_nonce][width-:32] + 1;     
-                index = 0;                            
+                index = 0;               
+                nonce_attuale <= memoria[indirizzo_nonce][width-:32];                            
             end
                          
             3'h3: begin               
                 //----------------------------------STATO 011------------------------------------------//
                 //------DIVIDO IL MESSAGGIO IN BLOCCHI DA 512-bit E LI PASSO ALLA FUNZIONE "Chunks"----//
+                
+                //Finisco di aggiornare il nonce
+                memoria[indirizzo_nonce][width-:32] <= nonce_attuale + 1;        
                 
                 //Sposto il messaggio nel modulo Chunks a blocchi di 512-bit                                                               
                 chunk = memoria[index];                                 
