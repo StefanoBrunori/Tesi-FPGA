@@ -9,20 +9,20 @@ module Mining_FSM(
     input wire [255:0] HASH,
         
     output reg [2:0] state,
-    output reg [63:0] OUT     
+    output reg OUT     
     );
     
     always@(posedge clock) begin
         if (^state === 1'bx) state <= 3'h0;       
         
         //reset
-        if (reset) begin
+        if (~reset) begin
             state <= 3'h0;           
         end
         
         case (state) 
             3'h0: begin
-                    OUT <= "Niente!";
+                    OUT <= 0;
                     state <= 3'h1;                                              
                   end        
                     
@@ -45,7 +45,7 @@ module Mining_FSM(
                   
             3'h7: begin
                 if (HASH[255-:10] == 10'h0) begin
-                     OUT <= "Trovato!";     
+                     OUT <= 1;     
                 end
                 else begin
                     state <= 3'h2;
