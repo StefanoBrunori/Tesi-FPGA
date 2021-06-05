@@ -21,7 +21,7 @@ module Mining_test;
              
     reg [1023:0] messaggio;
     
-    integer i,j = 0;
+    integer i = 0;
     integer k = LENGHT-1;
     initial begin
         for (i=0;i<LENGHT;i=i+1) begin
@@ -30,15 +30,14 @@ module Mining_test;
     end
     
     always@(posedge clock) begin
-        if (state == 3'h1) begin
-           if (j == LENGHT/512) begin
-               stopw = 1;  
-           end
-           else begin              
+        if (state == 3'h1) begin          
+           if (~stopw) begin                                         
                message = messaggio[k-:512];
-               indirizzo = j;
-               j = j + 1;
-               k = k - 32;
+               if (indirizzo < LENGHT/512-1) indirizzo = indirizzo + 1;                                     
+               k = k - 512;               
+           end
+           if (k <= 0) begin
+               stopw = 1;  
            end
         end       
         
