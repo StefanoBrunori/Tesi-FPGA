@@ -17,12 +17,15 @@ module Preprocessing(
     parameter WIDTH = 512;
     parameter DEPTH = 2000;
     
-    //Mi costruisco una memoria 100 blocchi da 512 bit ciascuno
+    //Mi costruisco una memoria 2000 blocchi da 512 bit ciascuno
     reg [WIDTH-1:0] memoria [0:DEPTH-1];  
     
     //Diachiarazione registri e variabili d'appoggio         
-    reg [11:0] index;
+    reg [15:0] index;
     reg [31:0] nonce_attuale;
+    wire [15:0] ind;
+    assign ind = (state == 3'h1)?indirizzo:indirizzo_nonce;
+    
         
     always@(posedge clock) begin
         
@@ -47,18 +50,17 @@ module Preprocessing(
                 //----------------------STATO 001-----------------------------//
                 //-----------------SCRITTURA IN MEMORIA-----------------------//
                 
-                //Scrivo il messaggio in memoria
-                if (~stopw) begin       
-                    memoria[indirizzo] = message;                               
-                end                              
+                //Scrivo il messaggio in memoria                       
+                memoria[ind] = message;                           
+                                              
             end                      
             
             3'h2: begin               
                 //--------------------STATO 010--------------------------------//
-                //---------INIZIO L'AGGIORNAMENTO DEL NONCE--------------------//
-                               
+                //---------INIZIO L'AGGIORNAMENTO DEL NONCE--------------------//              
                 index = 0;               
-                nonce_attuale <= memoria[indirizzo_nonce][width-:32];                            
+                nonce_attuale = memoria[ind][width-:32];                           
+                
             end
                          
             3'h3: begin               
@@ -66,10 +68,14 @@ module Preprocessing(
                 //------DIVIDO IL MESSAGGIO IN BLOCCHI DA 512-bit E LI PASSO ALLA FUNZIONE "Chunks"----//
                 
                 //Finisco di aggiornare il nonce
-                memoria[indirizzo_nonce][width-:32] <= nonce_attuale + 1;        
+                if (fine) begin
+                    memoria[ind][width-:32] = nonce_attuale + 1;
+                    fine = 0;              
+                end
                 
                 //Sposto il messaggio nel modulo Chunks a blocchi di 512-bit                                                               
-                chunk = memoria[index];                                 
+                chunk = memoria[index];
+                                                 
                 if (index == indirizzo) begin
                     fine <= 1;
                 end
@@ -272,8 +278,7 @@ module Chunks(
                 //------------------------STATO 110------------------------//
                 //-------------------Produco l'hash finale-----------------//    
                 
-                HASH <= {h0, h1, h2, h3, h4, h5, h6, h7};                                                         
-                $monitor("\nHash finale: %h\n", HASH);       
+                HASH <= {h0, h1, h2, h3, h4, h5, h6, h7};                                                                            
                                                
             end
             
@@ -284,5 +289,6 @@ module Chunks(
             
         endcase
     end
-        
-endmodule 
+    
+    
+endmodule
