@@ -26,14 +26,10 @@ module Mining_FSM(
                     state <= 3'h1;                                              
                   end        
                     
-            3'h1: if (stopw) begin
-                     state <= 3'h2;
-                  end
+            3'h1: if (stopw) state <= 3'h2;                                     
                     
-            3'h2: begin                  
-                    state <= 3'h3;                  
-                  end
-            
+            3'h2: if (flag) state <= 3'h3;               
+                                                                  
             3'h3: state <= 3'h4;
             
             3'h4: state <= 3'h5;
