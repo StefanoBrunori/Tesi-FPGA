@@ -419,7 +419,8 @@
 	*/	
 	
 		     
-    wire fine;       
+    wire fine;
+    wire flag;
     wire [511:0] chunk;
     wire [255:0] HASH;
                  
@@ -429,6 +430,7 @@
         .reset(S_AXI_ARESETN),      
         .stopw(slv_reg2[25]),       
         .fine(fine),
+	.flag(flag),
         .HASH(HASH),
                                
         .state(OUT_state[2:0]),
@@ -447,6 +449,7 @@
         .stopw(slv_reg2[25]),
         
         .fine(fine),
+        .flag(flag),
         .chunk(chunk)                     
         );
     
