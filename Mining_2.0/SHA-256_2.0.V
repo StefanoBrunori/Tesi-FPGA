@@ -5,8 +5,9 @@ module Preprocessing(
     input reset,    
     input [15:0] indirizzo,
     input [2:0] state,   
-    input wire [511:0] message,
-    input [8:0] width,
+    input wire [31:0] message,
+    input [8:0] nonce_width,
+    input [8:0] ind_width,
     input [15:0] indirizzo_nonce,
     input stopw, 
     
@@ -24,13 +25,13 @@ module Preprocessing(
     reg [15:0] index;
     reg [31:0] nonce_attuale;
     wire [15:0] ind;
-    assign ind = (state == 3'h1)?indirizzo:indirizzo_nonce;
     
-        
+    assign ind = (state == 3'h1)?indirizzo:indirizzo_nonce;
+            
     always@(posedge clock) begin
         
         //Reset
-        if (reset) begin           
+        if (~reset) begin           
             index <= 12'h0;          
             chunk <= 512'h0;
             fine <= 1'b0;
@@ -51,7 +52,7 @@ module Preprocessing(
                 //-----------------SCRITTURA IN MEMORIA-----------------------//
                 
                 //Scrivo il messaggio in memoria                       
-                memoria[ind] = message;                           
+                memoria[ind][ind_width-:32] = message;                               
                                               
             end                      
             
@@ -59,7 +60,7 @@ module Preprocessing(
                 //--------------------STATO 010--------------------------------//
                 //---------INIZIO L'AGGIORNAMENTO DEL NONCE--------------------//              
                 index = 0;               
-                nonce_attuale = memoria[ind][width-:32];                           
+                nonce_attuale = memoria[ind][nonce_width-:32];                           
                 
             end
                          
@@ -69,7 +70,7 @@ module Preprocessing(
                 
                 //Finisco di aggiornare il nonce
                 if (fine) begin
-                    memoria[ind][width-:32] = nonce_attuale + 1;
+                    memoria[ind][nonce_width-:32] = nonce_attuale + 1;
                     fine = 0;              
                 end
                 
@@ -156,7 +157,7 @@ module Chunks(
     
     always@(posedge clock) begin
         //reset
-        if (reset) begin
+        if (~reset) begin
             s0 <= 32'h0;
             s1 <= 32'h0;
         
@@ -278,7 +279,7 @@ module Chunks(
                 //------------------------STATO 110------------------------//
                 //-------------------Produco l'hash finale-----------------//    
                 
-                HASH <= {h0, h1, h2, h3, h4, h5, h6, h7};                                                                            
+                HASH <= {h0, h1, h2, h3, h4, h5, h6, h7};                                                                               
                                                
             end
             
