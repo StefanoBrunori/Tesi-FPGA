@@ -405,10 +405,13 @@
 	/*
 	Definizione slave registers:
 	  slv_reg0 verrà usato per salvare il messaggio in memoria
-	  slv_reg1[16] verrà usato per stopw
-	  slv_reg1[15:0] verrà usato per l'indirizzo
-	  slv_reg2[23:16] verrà usato per width
+	  slv_reg1[24:16] verrà utilizzato per ind_width
+	  slv_reg1[15:0] verrà usato per indirizzo
+	  
+	  slv_reg2[25] verrà usato per stopw
+	  slv_reg2[24:16] verrà usato per nonce_width
 	  slv_reg2[15:0] verrà usato per indirizzo_nonce
+	  
 	  al posto di slv_reg3 verrà mandato in output il registro OUT_state
 	  Il registro wire OUT_state verrà usato:
 	     - per sapere se l'hash è giusto o no (OUT_state[3])
@@ -424,7 +427,7 @@
     Mining_FSM fsm1(
         .clock(S_AXI_ACLK),
         .reset(S_AXI_ARESETN),      
-        .stopw(slv_reg1[16]),       
+        .stopw(slv_reg2[25]),       
         .fine(fine),
         .HASH(HASH),
                                
@@ -438,9 +441,10 @@
         .indirizzo(slv_reg1[15:0]),
         .state(OUT_state[2:0]),
         .message(slv_reg0),
-        .width(slv_reg2[23:16]),
+        .nonce_width(slv_reg2[24:16]),
+        .ind_width(slv_reg1[24:16]),
         .indirizzo_nonce(slv_reg2[15:0]),
-        .stopw(slv_reg1[16]),
+        .stopw(slv_reg2[25]),
         
         .fine(fine),
         .chunk(chunk)                     
@@ -449,7 +453,7 @@
     Chunks c1(
         .clock(S_AXI_ACLK),
         .reset(S_AXI_ARESETN),    
-        .state(state),
+        .state(OUT_state[2:0]),
         .chunk(chunk),
                                           
         .HASH(HASH)
