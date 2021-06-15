@@ -1,0 +1,137 @@
+`timescale 1ns / 1ps
+
+module Mining_FSM(
+    input clock,
+    input reset,   
+    input stopw,      
+    input flag,    
+    input wire [255:0] HASH,    
+    input [15:0] indirizzo,
+    input [15:0] indirizzo_nonce,
+    input [8:0] indirizzo_width,
+    input [8:0] nonce_width,
+    input [31:0] message,
+    input [31:0] preproc_out,
+    
+    output reg [1:0] counter,
+    output reg [31:0] bram_data_in,
+    output reg cs_n,
+    output reg wr_n, 
+    output reg rd_n,
+    output reg [15:0] addr,
+    output reg [8:0] addr_width,
+    output reg [2:0] state,
+    output reg OUT     
+    );
+    
+    reg [15:0] index;
+    reg fine;    
+         
+    always@(posedge clock) begin
+        if (^state === 1'bx) state <= 3'h0;
+        if (^wr_n === 1'bx) wr_n = 1'b1;
+        if (^rd_n === 1'bx) rd_n = 1'b0;
+        if (^cs_n === 1'bx) cs_n = 1'b1;
+        if (^index === 1'bx) index = 1'b0;
+        if (^fine === 1'bx) fine = 1'b0;       
+        if (^bram_data_in === 1'bx) bram_data_in = 32'h0;
+        if (^addr === 1'bx) addr = 16'h0;
+        if (^addr_width === 1'bx) addr_width = 9'h0;
+        if (^OUT === 1'bx) OUT = 1'b0;
+        if (^counter === 1'bx) counter = 1'b0;
+        
+        //reset
+        if (~reset) begin
+            state <= 3'h0;           
+        end
+        
+        case (state) 
+            3'h0: begin
+                    OUT <= 0;
+                    state <= 3'h1;                                              
+                  end        
+                    
+            3'h1: begin
+                    if (stopw) begin
+                        if (counter == 2'b11) state <= 3'h2;
+                        else counter = counter + 1;                       
+                        wr_n = 1'b1;
+                        rd_n = 1'b0;                      
+                        addr = indirizzo_nonce;
+                        addr_width = nonce_width;
+                        bram_data_in = preproc_out;
+                    end
+                    else begin
+                        bram_data_in = message;
+                        addr = indirizzo;
+                        addr_width = indirizzo_width;
+                        cs_n = 1'b0;
+                        wr_n = 1'b0;                  
+                    end
+                     
+                  end 
+                                                         
+            3'h2: begin 
+                    counter = 1'b0;                                    
+                    addr = indirizzo_nonce;
+                    addr_width = nonce_width;  
+                    bram_data_in = preproc_out;
+                    wr_n = 1'b0;
+                    //$display("\nstate: %d, addr: %d", state, addr);                  
+                    /*if (flag) begin
+                        state <= 3'h3;
+                        wr_n = 1'b0;
+                    end
+                    else begin 
+                        rd_n = 1'b0;
+                        wr_n = 1'b0;                                               
+                    end  */        
+                  end
+                                                                 
+            3'h3: begin 
+                    bram_data_in = preproc_out;
+                    rd_n = 1'b0;
+                    addr = index;
+                    //$display("\nindex: %d", index);                                       
+                    state <= 3'h4;
+                    index = index + 1;
+                    //$display("\nindex: %d", index);
+                    if (index > indirizzo) begin
+                        //$display("ciao!");                        
+                        cs_n = 1'b1;                       
+                        fine = 1'b1;
+                        index = 1'b0;
+                    end
+                    rd_n = 1'b1;
+                    wr_n = 1'b1;
+                  end
+            
+            3'h4: state <= 3'h5;                                                    
+                     
+            3'h5: begin
+                    //$display("\nfine: %d", fine);
+                    addr = index;
+                    rd_n = 1'b0;
+                    if (fine) begin
+                        state <= 3'h6;
+                        fine = 1'b0;
+                    end
+                    else state <= 3'h3;
+                  end  
+                  
+            3'h6: state <= 3'h7;
+                  
+            3'h7: begin
+                if (HASH[255-:10] == 10'h0) begin
+                     OUT <= 1;     
+                end
+                else begin
+                    state <= 3'h2;
+                    cs_n = 1'b0;
+                end  
+            end
+            
+        endcase
+    end
+    
+endmodule
