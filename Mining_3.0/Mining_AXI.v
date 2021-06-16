@@ -418,33 +418,29 @@
 	     - per leggere lo stato della FSM (OUT_state[2:0])
 	*/	
 	
-		     
-    wire fine;
-    wire flag;       
+		            
     wire [511:0] chunk;
     wire [255:0] HASH;
     wire cs_n;
     wire wr_n;
     wire rd_n;
     wire [15:0] addr;
-    wire [15:0] addr_width;
+    wire [8:0] addr_width;
     wire [511:0] bram_data_out;
-    wire [31:0] bram_data_in;
-    wire [31:0] preproc_out;
+    wire [31:0] bram_data_in;  
                  
                         
     Mining_FSM fsm1(
         .clock(S_AXI_ACLK),
         .reset(S_AXI_ARESETN),      
-        .stopw(slv_reg2[25]),              
-        .flag(flag),
+        .stopw(slv_reg2[25]),                    
         .HASH(HASH),
         .indirizzo(slv_reg1[15:0]),
         .indirizzo_nonce(slv_reg2[15:0]),
         .indirizzo_width(slv_reg1[24:16]),
         .nonce_width(slv_reg2[24:16]),
         .message(slv_reg0),
-        .preproc_out(preproc_out),
+        .bram_data_out(bram_data_out),
          
         .bram_data_in(bram_data_in), 
         .cs_n(cs_n),
@@ -467,18 +463,7 @@
         
         .bram_data_out(bram_data_out)
         );
-    
-    Preprocessing p1(
-        .clock(S_AXI_ACLK),
-        .reset(S_AXI_ARESETN),            
-        .state(OUT_state[2:0]),
-        .nonce_width(slv_reg2[24:16]),         
-        .memoria_in(bram_data_out),            
         
-        .preproc_out(preproc_out),       
-        .flag(flag),
-        .chunk(chunk)                           
-        );
     
     Chunks c1(
         .clock(S_AXI_ACLK),
