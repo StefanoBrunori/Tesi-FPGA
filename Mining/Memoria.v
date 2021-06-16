@@ -28,7 +28,7 @@ module Memoria(
             out_mem <= 8'h0;            
         end
         
-        //Quando we (write enable) = 1 viene eseguita una lettura in memoria
+        //Quando we (write enable) = 1 viene eseguita una scrittura in memoria
         if (we) begin                                               
             ram[indirizzo_write] <= dati;            
         end    
