@@ -2,13 +2,12 @@
 
 module Testbench;
     
-    parameter LENGHT = 1024;
+    parameter LENGHT = 1024;  //128-byte
     
     reg clock = 0;
     reg resetn = 1;
     reg stopw = 0;
-      
-    wire flag;       
+                
     wire [511:0] chunk;
     wire [255:0] HASH;
     wire cs_n;
@@ -17,16 +16,14 @@ module Testbench;
     wire [15:0] addr;
     wire [8:0] addr_width;
     wire [511:0] bram_data_out;
-    wire [31:0] bram_data_in;
-    wire [31:0] preproc_out;
-    wire [1:0] counter;
+    wire [31:0] bram_data_in;   
     
     reg [31:0] message;
     reg [15:0] indirizzo = 0;
     reg [8:0] nonce_width = 9'd63;
     reg [15:0] indirizzo_nonce = 16'h0;
     reg [8:0] indirizzo_width = 9'd511;
-    wire [2:0] state;
+    wire [2:0] state;   
     wire OUT;
     
     reg [LENGHT-1:0] messaggio;
@@ -47,8 +44,7 @@ module Testbench;
                //Dopo 16 iterazioni ho riempito un blocco da 512-bit
                if (j == 16) indirizzo = indirizzo + 1;
                if (j > 16) begin
-                   k = k + 32; 
-                   //indirizzo = indirizzo + 1;
+                   k = k + 32;               
                    indirizzo_width = 9'd511;
                    j = 0;
                end
@@ -61,17 +57,17 @@ module Testbench;
     Mining_FSM fsm1(
         .clock(clock),
         .reset(resetn),      
-        .stopw(stopw),              
-        .flag(flag),
+        .stopw(stopw),                      
         .HASH(HASH),
         .indirizzo(indirizzo),
         .indirizzo_nonce(indirizzo_nonce),
         .indirizzo_width(indirizzo_width),
         .nonce_width(nonce_width),
         .message(message),
-        .preproc_out(preproc_out),
+        .bram_data_out(bram_data_out),
         
-        .counter(counter), 
+        .chunk(chunk),
+         
         .bram_data_in(bram_data_in), 
         .cs_n(cs_n),
         .wr_n(wr_n), 
@@ -94,20 +90,8 @@ module Testbench;
         .bram_data_out(bram_data_out)
         );
     
-    Preprocessing p1(
-        .clock(clock),
-        .reset(resetn),            
-        .state(state),
-        .nonce_width(nonce_width),         
-        .memoria_in(bram_data_out),
-        .counter(counter),            
-        
-        .preproc_out(preproc_out),       
-        .flag(flag),
-        .chunk(chunk)                           
-        );
     
-    Chunks c1(
+    SHA_256 sha1(
         .clock(clock),
         .reset(resetn),    
         .state(state),
@@ -115,6 +99,7 @@ module Testbench;
                                           
         .HASH(HASH)
         );
+    
         
     always #5 clock = ~clock;
    
