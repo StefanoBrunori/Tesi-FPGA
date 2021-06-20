@@ -110,12 +110,12 @@
 	reg [C_S_AXI_DATA_WIDTH-1:0]	slv_reg3;
 	wire	 slv_reg_rden;
 	wire	 slv_reg_wren;
-	reg [C_S_AXI_DATA_WIDTH-1:0]	 reg_data_out;
+	reg [35:0]	 reg_data_out;
 	integer	 byte_index;
 	reg	 aw_en;
 	
 	//Registro su cui mostro il risultato e salvo lo stato della macchina
-	wire [3:0] OUT_state;
+	wire [35:0] OUT_state;
 
 	// I/O Connections assignments
 
@@ -448,8 +448,9 @@
         .rd_n(rd_n),
         .addr(addr),
         .addr_width(addr_width),                       
-        .state(OUT_state[2:0]),
-        .OUT(OUT_state[3])       
+	.state(OUT_state[34:32]),
+	.OUT(OUT_state[35]),
+	.NONCE_OUT(OUT_state[31:0])   
         );
     
     Memoria m1(
@@ -468,7 +469,7 @@
     Chunks c1(
         .clock(S_AXI_ACLK),
         .reset(S_AXI_ARESETN),    
-        .state(OUT_state[2:0]),
+	.state(OUT_state[34:32]),
         .chunk(chunk),
                                           
         .HASH(HASH)
