@@ -20,7 +20,8 @@ module Mining_FSM(
     output reg [15:0] addr,
     output reg [8:0] addr_width,
     output reg [2:0] state,
-    output reg OUT     
+    output reg OUT,
+    output reg [31:0] NONCE_OUT
     );
     
     reg [15:0] index;
@@ -113,7 +114,12 @@ module Mining_FSM(
                   
             3'h7: begin
                 if (HASH[255-:10] == 10'h0) begin
-                     OUT = 1;                         
+                     OUT = 1; 
+                     if (OUT) begin
+                        addr = indirizzo_nonce; 
+                        rd_n = 1'b0;                                              
+                        NONCE_OUT = bram_data_out[nonce_width-:32]; 
+                     end
                 end
                 else begin
                     state <= 3'h2;                                     
