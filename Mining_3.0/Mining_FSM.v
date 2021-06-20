@@ -87,14 +87,14 @@ module Mining_FSM(
                     rd_n = 1'b0;
                     chunk = bram_data_out;                                                                                                
                     index = index + 1;
-                    state <= 3'h4;
-                    
+                    //Index ha raggiunto l'ultimo blocco
                     if (index == indirizzo) begin                                                                                            
                         fine = 1'b1;
                         index = 16'h0;
                     end
                     rd_n = 1'b1;
                     wr_n = 1'b1;
+                    state <= 3'h4;
                   end
             
             3'h4: state <= 3'h5;                                                    
