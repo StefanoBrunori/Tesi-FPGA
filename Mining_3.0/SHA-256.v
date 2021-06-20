@@ -114,7 +114,7 @@ module SHA_256(
                 //------------------------STATO 100------------------------//
                 //----------------Preparazione delle 16 parole-------------//
                 
-                //Divido il chunk in sedici parole da 32-bit con notazione big-endian (quindi: little_endian=[110100] => big_endian=[001011])
+                //Divido il chunk in sedici parole da 32-bit
                 
                 for (i=16; i>0; i=i-1) begin
                     w[16-i] = chunk[((i*32)-1) -: 32];                                                                                         
