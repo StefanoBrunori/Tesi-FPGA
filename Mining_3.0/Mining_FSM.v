@@ -64,8 +64,7 @@ module Mining_FSM(
                         bram_data_in = message;                     
                         cs_n = 1'b0;
                         wr_n = 1'b0;                  
-                    end
-                     
+                    end                    
                   end 
                                                          
             3'h2: begin
