@@ -99,8 +99,7 @@ module Mining_FSM(
             
             3'h4: state <= 3'h5;                                                    
                      
-            3'h5: begin                                       
-                    rd_n = 1'b0;
+            3'h5: begin                                                           
                     if (fine) begin
                         state <= 3'h6;
                         fine = 1'b0;
