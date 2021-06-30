@@ -428,7 +428,8 @@
     wire [8:0] addr_width;
     wire [511:0] bram_data_out;
     wire [31:0] bram_data_in;  
-                 
+    wire flag;
+    wire [31:0] indice;             
                         
     Mining_FSM fsm1(
         .clock(S_AXI_ACLK),
@@ -441,7 +442,10 @@
         .nonce_width(slv_reg2[24:16]),
         .message(slv_reg0),
         .bram_data_out(bram_data_out),
-         
+        
+	.flag(flag),
+        .indice(indice),
+        .chunk(chunk),
         .bram_data_in(bram_data_in), 
         .cs_n(cs_n),
         .wr_n(wr_n), 
@@ -466,11 +470,13 @@
         );
         
     
-    Chunks c1(
+    SHA_256 sha1(
         .clock(S_AXI_ACLK),
         .reset(S_AXI_ARESETN),    
-	.state(OUT_state[34:32]),
+        .state(OUT_state[34:32]),
         .chunk(chunk),
+        .indice(indice),
+        .flag(flag),
                                           
         .HASH(HASH)
         );
