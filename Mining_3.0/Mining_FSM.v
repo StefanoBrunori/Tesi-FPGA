@@ -97,14 +97,32 @@ module Mining_FSM(
                     state <= 3'h4;
                   end
             
-            3'h4: state <= 3'h5;                                                    
-                     
-            3'h5: begin                                                           
-                    if (fine) begin
-                        state <= 3'h6;
-                        fine = 1'b0;
+            3'h4: begin
+                    if (~flag) begin
+                        indice = 0;
+                        flag = 1;
+                    end                    
+                    else begin
+                        state <= 3'h5;
+                        flag = 0;                                                    
                     end
-                    else state <= 3'h3;
+                  end                                                    
+                     
+            3'h5: begin
+                    if (~flag) flag = 1;
+                    else begin 
+                        flag = 0;
+                        if (indice == 6'd63) begin                  
+                            addr = index;
+                            rd_n = 1'b0;
+                            if (fine) begin
+                                state <= 3'h6;
+                                fine = 1'b0;
+                            end
+                            else state <= 3'h3;
+                        end 
+                        else indice = indice + 1; 
+                    end
                   end  
                   
             3'h6: state <= 3'h7;
