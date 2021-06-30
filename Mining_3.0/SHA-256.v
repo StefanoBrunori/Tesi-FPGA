@@ -115,62 +115,67 @@ module SHA_256(
                 //----------------Preparazione delle 16 parole-------------//
                 
                 //Divido il chunk in sedici parole da 32-bit
-                
-                for (i=16; i>0; i=i-1) begin
-                    w[16-i] = chunk[((i*32)-1) -: 32];                                                                                         
+                if (~flag) begin
+                    for (i=16; i>0; i=i-1) begin
+                        w[16-i] = chunk[((i*32)-1) -: 32];                                                                                         
+                    end
                 end
-                
-                //Estendo le sedici parole da 32-bit in sessantaquattro parole da 32-bit            
-                for (i=16; i<=63; i=i+1) begin           
-                    s0 = {w[i-15][6:0], w[i-15][31:7]} ^ {w[i-15][17:0], w[i-15][31:18]} ^ w[i-15] >> 3;                  
-                    s1 = {w[i-2][16:0], w[i-2][31:17]} ^ {w[i-2][18:0], w[i-2][31:19]} ^ w[i-2] >> 10;
-                    w[i] = w[i-16] + s0 + w[i-7] + s1;                  
-                end
-                                                           
-                //Inizializzo le costanti e i valori hash per questo blocco  
-                a = h0;   
-                b = h1;  
-                c = h2;
-                d = h3;
-                e = h4;
-                f = h5;
-                g = h6;
-                h = h7;  
-                                                        
+                else begin
+                    //Estendo le sedici parole da 32-bit in sessantaquattro parole da 32-bit            
+                    for (i=16; i<=63; i=i+1) begin           
+                        s0 = {w[i-15][6:0], w[i-15][31:7]} ^ {w[i-15][17:0], w[i-15][31:18]} ^ w[i-15] >> 3;                  
+                        s1 = {w[i-2][16:0], w[i-2][31:17]} ^ {w[i-2][18:0], w[i-2][31:19]} ^ w[i-2] >> 10;
+                        w[i] = w[i-16] + s0 + w[i-7] + s1;                  
+                    end
+                                                               
+                    //Inizializzo le costanti e i valori hash per questo blocco  
+                    a = h0;   
+                    b = h1;  
+                    c = h2;
+                    d = h3;
+                    e = h4;
+                    f = h5;
+                    g = h6;
+                    h = h7;  
+                end                                        
             end
             
             4'h5: begin                                      
                 //------------------------STATO 101------------------------//
                 //---------------------Ciclo principale--------------------//
                 //--------------------Aggiorno i valori--------------------// 
-                                                                                                                   
-                for (i=0; i<=63; i=i+1) begin                                                                   
+                
+                if (~flag) begin                                                                                                                                                                                  
                     s0 = {a[1:0], a[31:2]} ^ {a[12:0], a[31:13]} ^ {a[21:0], a[31:22]};        
                     maj = (a & b) ^ (a & c) ^ (b & c);
                     t2 = s0 + maj;
-                    s1 = {e[5:0], e[31:6]} ^ {e[10:0], e[31:11]} ^ {e[24:0], e[31:25]};
-                    ch = (e & f) ^ (~e & g);
-                    t1 = h + s1 + ch + k[i] + w[i] ;
-                    
-                    
-                    h = g;
-                    g = f;
-                    f = e;
-                    e = d + t1;
-                    d = c;
-                    c = b;
-                    b = a;
-                    a = t1 + t2;
                 end
                 
-                h0 = h0 + a;
-                h1 = h1 + b;
-                h2 = h2 + c;
-                h3 = h3 + d;
-                h4 = h4 + e;
-                h5 = h5 + f;
-                h6 = h6 + g;
-                h7 = h7 + h;
+                else begin
+                    s1 = {e[5:0], e[31:6]} ^ {e[10:0], e[31:11]} ^ {e[24:0], e[31:25]};
+                    ch = (e & f) ^ (~e & g);
+                    t1 = h + s1 + ch + k[indice] + w[indice];                
+                end
+                                
+                h = g;
+                g = f;
+                f = e;
+                e = d + t1;
+                d = c;
+                c = b;
+                b = a;
+                a = t1 + t2;
+                
+                if (indice == 6'd63) begin
+                    h0 = h0 + a;
+                    h1 = h1 + b;
+                    h2 = h2 + c;
+                    h3 = h3 + d;
+                    h4 = h4 + e;
+                    h5 = h5 + f;
+                    h6 = h6 + g;
+                    h7 = h7 + h;
+                end
             end
             
             4'h6: begin                            
