@@ -443,8 +443,8 @@
         .message(slv_reg0),
         .bram_data_out(bram_data_out),
         
-	.flag(flag),
-        .indice(indice),
+	.flag(flag), //Segnale aggiunto
+	.indice(indice), //Segnale aggiunto
         .chunk(chunk),
         .bram_data_in(bram_data_in), 
         .cs_n(cs_n),
@@ -474,9 +474,9 @@
         .clock(S_AXI_ACLK),
         .reset(S_AXI_ARESETN),    
         .state(OUT_state[34:32]),
-        .chunk(chunk),
-        .indice(indice),
-        .flag(flag),
+        .chunk(chunk),        
+	.indice(indice), //Segnale aggiunto
+	.flag(flag), //Segnale aggiunto
                                           
         .HASH(HASH)
         );
