@@ -1,17 +1,17 @@
 `timescale 1ns / 1ps
 
-
 module SHA_256(
     input clock,
     input reset,   
     input [2:0] state,
-    input [511:0] chunk,
+    input [511:0] chunk,    
+    input flag,
                    
     output reg [255:0] HASH 
     );
     
     
-    integer i, j;
+    integer j;
     integer w[0:63];
     reg [31:0] word;
     
@@ -40,7 +40,8 @@ module SHA_256(
     reg [31:0] h5;
     reg [31:0] h6;
     reg [31:0] h7;
-          
+    
+    reg [5:0] i; //contatore da 0 a 63
       
     parameter k = {
     32'h428a2f98, 32'h71374491, 32'hb5c0fbcf, 32'he9b5dba5, 32'h3956c25b, 32'h59f111f1, 32'h923f82a4, 32'hab1c5ed5, 
@@ -75,22 +76,18 @@ module SHA_256(
             
             HASH = 256'h0;    
         end
+        else begin
         
-        if (^HASH === 1'bx) HASH = 256'h0;        
+        //if (^HASH === 1'bx) HASH = 256'h0;        
         
-        case (state)
-            
-            3'h0: begin               
-                //------------------------STATO 000------------------------//
-                //------Stato in cui la funzione non esegue operazioni-----//                                            
-            end
+        case (state)                       
                        
-            3'h1: begin
+            3'h0: begin
                 //------------------------STATO 001------------------------//
                 //------Stato in cui la funzione non esegue operazioni-----//                                                        
             end
                                
-            3'h2: begin
+            3'h1: begin
                 //------------------------STATO 010------------------------//
                 //--------------Inizializzazione valori iniziali-----------//
                 
@@ -105,28 +102,30 @@ module SHA_256(
                 
             end
                  
-            3'h3: begin
+            3'h2: begin
                 //------------------------STATO 011------------------------//
                 //------Stato in cui la funzione non esegue operazioni-----//
             end
             
-            3'h4: begin              
+            3'h3: begin              
                 //------------------------STATO 100------------------------//
                 //----------------Preparazione delle 16 parole-------------//
                 
                 //Divido il chunk in sedici parole da 32-bit
                 if (~flag) begin
-                    for (i=16; i>0; i=i-1) begin
-                        w[16-i] = chunk[((i*32)-1) -: 32];                                                                                         
+                    for (j=16; j>0; j=j-1) begin
+                        w[16-j] = chunk[((j*32)-1) -: 32];                                                                                         
                     end
+                    i = 6'd16;                                                         
                 end
+                
                 else begin
                     //Estendo le sedici parole da 32-bit in sessantaquattro parole da 32-bit            
-                    for (i=16; i<=63; i=i+1) begin           
-                        s0 = {w[i-15][6:0], w[i-15][31:7]} ^ {w[i-15][17:0], w[i-15][31:18]} ^ w[i-15] >> 3;                  
-                        s1 = {w[i-2][16:0], w[i-2][31:17]} ^ {w[i-2][18:0], w[i-2][31:19]} ^ w[i-2] >> 10;
-                        w[i] = w[i-16] + s0 + w[i-7] + s1;                  
-                    end
+                               
+                    s0 = {w[i-15][6:0], w[i-15][31:7]} ^ {w[i-15][17:0], w[i-15][31:18]} ^ w[i-15] >> 3;                  
+                    s1 = {w[i-2][16:0], w[i-2][31:17]} ^ {w[i-2][18:0], w[i-2][31:19]} ^ w[i-2] >> 10;
+                    w[i] = w[i-16] + s0 + w[i-7] + s1;                  
+                    
                                                                
                     //Inizializzo le costanti e i valori hash per questo blocco  
                     a = h0;   
@@ -137,26 +136,24 @@ module SHA_256(
                     f = h5;
                     g = h6;
                     h = h7;  
+                    
+                    i = i + 1;
                 end                                        
             end
             
-            4'h5: begin                                      
+            4'h4: begin                                      
                 //------------------------STATO 101------------------------//
                 //---------------------Ciclo principale--------------------//
                 //--------------------Aggiorno i valori--------------------// 
+                                                                                                                                                                                                                 
+                s0 = {a[1:0], a[31:2]} ^ {a[12:0], a[31:13]} ^ {a[21:0], a[31:22]};        
+                maj = (a & b) ^ (a & c) ^ (b & c);
+                t2 = s0 + maj;         
+                s1 = {e[5:0], e[31:6]} ^ {e[10:0], e[31:11]} ^ {e[24:0], e[31:25]};
+                ch = (e & f) ^ (~e & g);
+                t1 = h + s1 + ch + k[i] + w[i];                
                 
-                if (~flag) begin                                                                                                                                                                                  
-                    s0 = {a[1:0], a[31:2]} ^ {a[12:0], a[31:13]} ^ {a[21:0], a[31:22]};        
-                    maj = (a & b) ^ (a & c) ^ (b & c);
-                    t2 = s0 + maj;
-                end
-                
-                else begin
-                    s1 = {e[5:0], e[31:6]} ^ {e[10:0], e[31:11]} ^ {e[24:0], e[31:25]};
-                    ch = (e & f) ^ (~e & g);
-                    t1 = h + s1 + ch + k[indice] + w[indice];                
-                end
-                                
+                                                
                 h = g;
                 g = f;
                 f = e;
@@ -166,7 +163,9 @@ module SHA_256(
                 b = a;
                 a = t1 + t2;
                 
-                if (indice == 6'd63) begin
+                i = i + 1;
+                
+                if (i == 6'h0) begin
                     h0 = h0 + a;
                     h1 = h1 + b;
                     h2 = h2 + c;
@@ -178,7 +177,7 @@ module SHA_256(
                 end
             end
             
-            4'h6: begin                            
+            4'h5: begin                            
                 //------------------------STATO 110------------------------//
                 //-------------------Produco l'hash finale-----------------//    
                 
@@ -186,13 +185,13 @@ module SHA_256(
                                                
             end
             
-            4'h7: begin              
+            4'h6: begin              
                 //------------------------STATO 111------------------------//
                 //----------------------Stato finale-----------------------//               
             end
             
         endcase
+        end
     end
-    
-    
-endmodule 
+   
+endmodule
