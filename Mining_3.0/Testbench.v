@@ -1,13 +1,14 @@
 `timescale 1ns / 1ps
 
-module Testbench;
+module Mining_test;
     
-    parameter LENGHT = 1024;  //128-byte
+    parameter LENGHT = 512;  //64-byte
     
     reg clock = 0;
     reg resetn = 1;
     reg stopw = 0;
-                
+    
+    wire flag;             
     wire [511:0] chunk;
     wire [255:0] HASH;
     wire cs_n;
@@ -24,9 +25,11 @@ module Testbench;
     reg [15:0] indirizzo_nonce = 16'h0;
     reg [8:0] indirizzo_width = 9'd511;
     wire [2:0] state;   
-    wire OUT;
+    wire [31:0] NONCE;
     
     reg [LENGHT-1:0] messaggio;
+    
+    reg f = 0;
     
     integer i, j = 0;
     integer k = LENGHT-1;
@@ -34,8 +37,8 @@ module Testbench;
         for (i=0;i<LENGHT;i=i+1) messaggio[i] = {$random}%2;
     end             
     
-    always@(posedge clock) begin
-       if (state == 3'h1) begin
+    always@(posedge clock) begin 
+       if (f) begin    
            if (~stopw) begin                                                       
                message = messaggio[k-:32];
                #1 j = j + 1;
@@ -44,14 +47,14 @@ module Testbench;
                //Dopo 16 iterazioni ho riempito un blocco da 512-bit
                if (j == 16) indirizzo = indirizzo + 1;
                if (j > 16) begin
-                   k = k + 32;               
+                   k = k + 32;                  
                    indirizzo_width = 9'd511;
                    j = 0;
                end
-               if (k < 0) stopw = 1'b1;
-                                          
-           end            
-       end 
+               if (k < 0) stopw = 1'b1;                                     
+           end 
+       end
+       else f = 1;         
     end
                         
     Mining_FSM fsm1(
@@ -67,15 +70,15 @@ module Testbench;
         .bram_data_out(bram_data_out),
         
         .chunk(chunk),
-         
+        .flag(flag),                      
         .bram_data_in(bram_data_in), 
         .cs_n(cs_n),
         .wr_n(wr_n), 
         .rd_n(rd_n),
         .addr(addr),
         .addr_width(addr_width),                       
-        .state(state),
-        .OUT(OUT)       
+        .state(state),        
+        .NONCE_OUT(NONCE)      
         );
     
     Memoria m1(
@@ -95,7 +98,8 @@ module Testbench;
         .clock(clock),
         .reset(resetn),    
         .state(state),
-        .chunk(chunk),
+        .chunk(chunk),       
+        .flag(flag),
                                           
         .HASH(HASH)
         );
