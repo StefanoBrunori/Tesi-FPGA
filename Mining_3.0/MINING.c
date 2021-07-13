@@ -83,7 +83,7 @@ int main(){
 	//Controllo periodicamente se è stato trovato il nonce giusto
 	while (1){
 		u32 out = MINING_IP_mReadReg(IP_ADDR, NONCE);
-		if (out == 0) {
+		if (out != 0) {
 			xil_printf("Nonce trovato: %h", out);
 			break;
 		}
