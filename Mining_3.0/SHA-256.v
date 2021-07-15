@@ -56,7 +56,7 @@ module SHA_256(
     
     always@(posedge clock) begin
         //reset
-        if (~reset) begin
+        if (reset == 1'b0) begin
             s0 = 32'h0;
             s1 = 32'h0;
         
