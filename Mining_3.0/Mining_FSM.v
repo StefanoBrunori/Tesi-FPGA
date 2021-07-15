@@ -42,7 +42,7 @@ module Mining_FSM(
         if (^flag === 1'bx) flag = 1'b0;                 
         
         //reset
-        if (~reset) begin
+        if (reset == 1'b0) begin
             state <= 3'h0;           
         end              
         else begin               
